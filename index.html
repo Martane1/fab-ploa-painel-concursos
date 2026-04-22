@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel PLOA – Vagas FAB 2026 & 2027</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <style>
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1f2937;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #f78166;
+      --accent3:   #3fb950;
+      --accent4:   #d29922;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --fab26:     #3b82f6;
+      --fab27:     #f59e0b;
+      --radius:    14px;
+      --shadow:    0 4px 24px rgba(0,0,0,.45);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       TOP BAR
+    ============================================================ */
+    header {
+      background: linear-gradient(135deg, #0f2044 0%, #1a3a6b 50%, #0d2137 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(0,0,0,.6);
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 1rem;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--fab26), var(--fab27));
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 1.3rem;
+    }
+    .logo-text { font-size: 1rem; font-weight: 700; letter-spacing: .5px; }
+    .logo-sub  { font-size: .72rem; color: var(--muted); margin-top: 1px; }
+    nav { display: flex; gap: .5rem; }
+    nav a {
+      color: var(--muted); text-decoration: none; font-size: .82rem;
+      padding: .4rem .8rem; border-radius: 8px; transition: all .2s;
+    }
+    nav a:hover, nav a.active {
+      color: var(--text); background: rgba(88,166,255,.15);
+    }
+    .badge-year {
+      font-size: .7rem; font-weight: 700; padding: .2rem .55rem;
+      border-radius: 20px; letter-spacing: .5px;
+    }
+    .y26 { background: rgba(59,130,246,.25); color: #93c5fd; border:1px solid rgba(59,130,246,.4); }
+    .y27 { background: rgba(245,158,11,.25); color: #fcd34d; border:1px solid rgba(245,158,11,.4); }
+
+    /* ============================================================
+       MAIN LAYOUT
+    ============================================================ */
+    main { max-width: 1400px; margin: auto; padding: 2rem 1.5rem 4rem; }
+
+    /* ============================================================
+       SECTION TITLE
+    ============================================================ */
+    .section-title {
+      font-size: 1.05rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem;
+    }
+    .section-title::after {
+      content:''; flex:1; height:1px; background: var(--border);
+    }
+
+    /* ============================================================
+       KPI CARDS
+    ============================================================ */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .kpi:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .kpi::before {
+      content: '';
+      position: absolute; top:0; left:0; right:0; height: 3px;
+    }
+    .kpi.blue::before  { background: var(--fab26); }
+    .kpi.amber::before { background: var(--fab27); }
+    .kpi.green::before { background: var(--accent3); }
+    .kpi.red::before   { background: var(--accent2); }
+    .kpi-label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+    .kpi-value { font-size: 2.2rem; font-weight: 800; line-height: 1.1; margin: .3rem 0 .15rem; }
+    .kpi-sub   { font-size: .78rem; color: var(--muted); }
+    .kpi-icon  { position: absolute; right:1.2rem; top:50%; transform:translateY(-50%); font-size:2rem; opacity:.12; }
+
+    /* ============================================================
+       FILTROS
+    ============================================================ */
+    .filters {
+      display: flex; flex-wrap: wrap; gap: .75rem; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .filters label { font-size: .78rem; color: var(--muted); margin-right: .3rem; }
+    .filters select, .filters input[type=range] {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: .4rem .8rem;
+      font-size: .82rem; cursor: pointer; outline: none;
+    }
+    .filters select:hover { border-color: var(--accent); }
+    .btn-reset {
+      margin-left: auto; background: rgba(248,81,73,.15);
+      border: 1px solid rgba(248,81,73,.35); color: #f85149;
+      border-radius: 8px; padding: .4rem .9rem; font-size: .8rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-reset:hover { background: rgba(248,81,73,.3); }
+
+    /* ============================================================
+       CHARTS GRID
+    ============================================================ */
+    .charts-row {
+      display: grid;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .charts-row.col2 { grid-template-columns: 1fr 1fr; }
+    .charts-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+    .charts-row.col1 { grid-template-columns: 1fr; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      box-shadow: var(--shadow);
+      transition: box-shadow .2s;
+    }
+    .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.6); }
+    .card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 1.1rem; gap: .5rem;
+    }
+    .card-title { font-size: .88rem; font-weight: 700; line-height: 1.3; }
+    .card-sub   { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .chart-wrap { position: relative; }
+
+    /* ============================================================
+       TABELA
+    ============================================================ */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: .82rem;
+    }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: .75rem 1rem; text-align: left;
+      font-weight: 700; color: var(--muted); text-transform: uppercase;
+      letter-spacing: .7px; font-size: .72rem; white-space: nowrap;
+      border-bottom: 1px solid var(--border); cursor: pointer;
+      user-select: none;
+    }
+    th:hover { color: var(--accent); }
+    td {
+      padding: .7rem 1rem; border-bottom: 1px solid rgba(48,54,61,.6);
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(88,166,255,.06); }
+    .tag {
+      display: inline-block; font-size: .68rem; font-weight: 700;
+      padding: .18rem .55rem; border-radius: 20px; letter-spacing: .5px;
+    }
+    .tag-om {
+      background: rgba(88,166,255,.18); color: #93c5fd;
+      border: 1px solid rgba(88,166,255,.3);
+    }
+    .bar-cell { display:flex; align-items:center; gap:.6rem; }
+    .bar-mini {
+      height: 6px; border-radius: 3px; background: var(--fab26);
+      flex-shrink: 0;
+    }
+    .bar-mini.amber { background: var(--fab27); }
+    .diff-pos { color: var(--accent3); font-weight: 700; }
+    .diff-neg { color: var(--accent2); font-weight: 700; }
+    .diff-zero{ color: var(--muted); }
+
+    /* ============================================================
+       PROGRESS BARS (OM)
+    ============================================================ */
+    .om-list { display: flex; flex-direction: column; gap: .85rem; }
+    .om-item { }
+    .om-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: .3rem;
+    }
+    .om-name  { font-size: .83rem; font-weight: 600; }
+    .om-nums  { font-size: .78rem; color: var(--muted); }
+    .om-track {
+      height: 8px; background: var(--surface2); border-radius: 4px;
+      overflow: hidden; display: flex;
+    }
+    .om-bar26 { background: var(--fab26); border-radius:4px 0 0 4px; transition: width .8s ease; }
+    .om-bar27 { background: var(--fab27); border-radius:0 4px 4px 0; transition: width .8s ease; }
+
+    /* ============================================================
+       TIMELINE / SUMMARY
+    ============================================================ */
+    .timeline { display: flex; flex-direction:column; gap:1rem; }
+    .tl-item  {
+      display: flex; gap:1rem; align-items:flex-start;
+    }
+    .tl-dot {
+      width:34px; height:34px; border-radius:50%; flex-shrink:0;
+      display:grid; place-items:center; font-size:.95rem; margin-top:2px;
+    }
+    .tl-dot.blue  { background:rgba(59,130,246,.2); border:2px solid var(--fab26); }
+    .tl-dot.amber { background:rgba(245,158,11,.2); border:2px solid var(--fab27); }
+    .tl-dot.green { background:rgba(63,185,80,.2);  border:2px solid var(--accent3); }
+    .tl-content { flex:1; }
+    .tl-title  { font-size:.85rem; font-weight:700; }
+    .tl-desc   { font-size:.78rem; color:var(--muted); margin-top:.25rem; line-height:1.5; }
+
+    /* ============================================================
+       TOOLTIP PERSONALIZADO
+    ============================================================ */
+    .custom-tooltip {
+      position:fixed; pointer-events:none; z-index:999;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: .6rem 1rem; font-size:.8rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5); display:none;
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      text-align:center; color: var(--muted); font-size:.75rem;
+      border-top:1px solid var(--border); padding: 1.5rem;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 900px) {
+      .charts-row.col2,
+      .charts-row.col3 { grid-template-columns: 1fr; }
+      nav { display: none; }
+    }
+    @media (max-width: 600px) {
+      .kpi-value { font-size: 1.7rem; }
+      main { padding: 1rem .75rem 3rem; }
+    }
+
+    /* ============================================================
+       ANIMAÇÕES
+    ============================================================ */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .animate { animation: fadeUp .5s ease both; }
+    .d1 { animation-delay: .05s; }
+    .d2 { animation-delay: .12s; }
+    .d3 { animation-delay: .19s; }
+    .d4 { animation-delay: .26s; }
+    .d5 { animation-delay: .33s; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius:4px; }
+  </style>
+</head>
+<body>
+
+<!-- ===================== HEADER ===================== -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">✈️</div>
+      <div>
+        <div class="logo-text">Painel PLOA · FAB</div>
+        <div class="logo-sub">Solicitações de Vagas em Concursos Públicos</div>
+      </div>
+    </div>
+    <nav>
+      <a href="#visao-geral" class="active">Visão Geral</a>
+      <a href="#por-cargo">Por Cargo</a>
+      <a href="#por-om">Por OM</a>
+      <a href="#tabela">Tabela</a>
+    </nav>
+    <div style="display:flex;gap:.5rem;">
+      <span class="badge-year y26">PLOA 2026</span>
+      <span class="badge-year y27">PLOA 2027</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== MAIN ===================== -->
+<main>
+
+  <!-- ── KPI CARDS ── -->
+  <section id="visao-geral" style="padding-top:1.5rem;">
+    <div class="section-title">📊 Visão Geral</div>
+    <div class="kpi-grid">
+      <div class="kpi blue animate d1">
+        <div class="kpi-label">Vagas PLOA 2026</div>
+        <div class="kpi-value" id="kpi-26">95</div>
+        <div class="kpi-sub">Total solicitado</div>
+        <div class="kpi-icon">📋</div>
+      </div>
+      <div class="kpi amber animate d2">
+        <div class="kpi-label">Vagas PLOA 2027</div>
+        <div class="kpi-value" id="kpi-27">323</div>
+        <div class="kpi-sub">Total solicitado</div>
+        <div class="kpi-icon">📋</div>
+      </div>
+      <div class="kpi green animate d3">
+        <div class="kpi-label">Crescimento</div>
+        <div class="kpi-value">+240%</div>
+        <div class="kpi-sub">2026 → 2027</div>
+        <div class="kpi-icon">📈</div>
+      </div>
+      <div class="kpi red animate d4">
+        <div class="kpi-label">Novos cargos em 2027</div>
+        <div class="kpi-value">30</div>
+        <div class="kpi-sub">Cargos exclusivos</div>
+        <div class="kpi-icon">🆕</div>
+      </div>
+      <div class="kpi blue animate d5" style="--fab26:#8b5cf6;">
+        <div class="kpi-label">OMs envolvidas</div>
+        <div class="kpi-value">8</div>
+        <div class="kpi-sub">Organizações Militares</div>
+        <div class="kpi-icon">🏛️</div>
+      </div>
+    </div>
+
+    <!-- ── FILTROS ── -->
+    <div class="filters animate d2">
+      <label>Ano:</label>
+      <select id="filtroAno" onchange="aplicarFiltros()">
+        <option value="ambos">Ambos</option>
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+      </select>
+      <label>OM:</label>
+      <select id="filtroOM" onchange="aplicarFiltros()">
+        <option value="todas">Todas</option>
+      </select>
+      <label>Cargo:</label>
+      <select id="filtroCargo" onchange="aplicarFiltros()">
+        <option value="todos">Todos</option>
+      </select>
+      <button class="btn-reset" onclick="resetarFiltros()">↺ Resetar</button>
+    </div>
+  </section>
+
+  <!-- ── CHARTS ROW 1: Comparativo Geral + Evolução ── -->
+  <div class="charts-row col2 animate d2">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Vagas Totais por Ano</div>
+          <div class="card-sub">Comparativo geral 2026 vs 2027</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartGeral" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Distribuição por Tipo de Cargo</div>
+          <div class="card-sub">Participação percentual nos dois anos</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartTipoCargo" height="220"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── CHARTS ROW 2: OM ── -->
+  <section id="por-om">
+    <div class="section-title" style="margin-top:.5rem;">🏛️ Por Organização Militar</div>
+    <div class="charts-row col2 animate d3">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Vagas por OM — 2026</div>
+            <div class="card-sub">Distribuição entre as organizações</div>
+          </div>
+          <span class="badge-year y26">2026</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartOM26" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Vagas por OM — 2027</div>
+            <div class="card-sub">Distribuição entre as organizações</div>
+          </div>
+          <span class="badge-year y27">2027</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartOM27" height="240"></canvas></div>
+      </div>
+    </div>
+
+    <!-- OM barras duplas -->
+    <div class="card animate d4" style="margin-bottom:2rem;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Evolução por OM — 2026 vs 2027</div>
+          <div class="card-sub">Comparação lado a lado entre as organizações</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartOMComparativo" height="180"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ── CHARTS ROW 3: Cargos ── -->
+  <section id="por-cargo">
+    <div class="section-title">💼 Por Cargo</div>
+    <div class="charts-row col2 animate d3">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top Cargos — 2026</div>
+            <div class="card-sub">Ordenado por quantidade de vagas</div>
+          </div>
+          <span class="badge-year y26">2026</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartCargo26" height="280"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top Cargos — 2027</div>
+            <div class="card-sub">Top 12 por quantidade de vagas</div>
+          </div>
+          <span class="badge-year y27">2027</span>
+        </div>
+        <div class="chart-wrap"><canvas id="chartCargo27" height="280"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PROGRESS POR OM ── -->
+  <div class="charts-row col2 animate d4" style="margin-bottom:2rem;">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Participação das OMs</div>
+          <div class="card-sub"><span style="color:var(--fab26)">■</span> 2026 &nbsp; <span style="color:var(--fab27)">■</span> 2027</div>
+        </div>
+      </div>
+      <div class="om-list" id="omBars"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Insights & Destaques</div>
+          <div class="card-sub">Análise comparativa automatizada</div>
+        </div>
+      </div>
+      <div class="timeline" id="insights"></div>
+    </div>
+  </div>
+
+  <!-- ── TABELA DETALHADA ── -->
+  <section id="tabela">
+    <div class="section-title animate d4">📋 Tabela Detalhada</div>
+    <div class="card animate d5" style="padding:0;">
+      <div style="padding:1rem 1.4rem .5rem; display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="🔍  Buscar cargo ou OM…"
+          oninput="filtrarTabela()"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);
+                 border-radius:8px;padding:.45rem .9rem;font-size:.83rem;outline:none;flex:1;min-width:200px;"
+        />
+        <span id="countRows" style="font-size:.78rem;color:var(--muted);"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tabelaDetalhada">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">Cargo ↕</th>
+              <th onclick="sortTable(1)">OM ↕</th>
+              <th onclick="sortTable(2)">2026 ↕</th>
+              <th onclick="sortTable(3)">2027 ↕</th>
+              <th onclick="sortTable(4)">Δ Vagas ↕</th>
+              <th>Proporção</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Painel gerado automaticamente · Dados: PLOA 2026 & 2027 – Força Aérea Brasileira · Atualizado em abril/2026
+</footer>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script>
+/* ──────────────────────────────────────────
+   DADOS
+────────────────────────────────────────── */
+const RAW26 = [
+  {cargo:"Arquivista",                                    qtd:1,  om:"EEAR"},
+  {cargo:"Bibliotecário",                                 qtd:1,  om:"AFA"},
+  {cargo:"Bibliotecário",                                 qtd:1,  om:"EPCAR"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:10, om:"CBNB"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:2,  om:"EEAR"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:32, om:"EPCAR"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:2,  om:"UNIFA"},
+  {cargo:"Professor da Carreira do Magistério Superior", qtd:30, om:"AFA"},
+  {cargo:"Professor da Carreira do Magistério Superior", qtd:4,  om:"ECEMAR"},
+  {cargo:"Professor da Carreira do Magistério Superior", qtd:4,  om:"UNIFA"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:1,  om:"AFA"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:4,  om:"CBNB"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:1,  om:"EAOAR"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:2,  om:"EPCAR"},
+];
+
+const RAW27 = [
+  {cargo:"Administrador",                                qtd:6,  om:"EPCAR"},
+  {cargo:"Administrador",                                qtd:5,  om:"CTRB"},
+  {cargo:"Administrador",                                qtd:2,  om:"ECE"},
+  {cargo:"Administrador",                                qtd:2,  om:"EEAR"},
+  {cargo:"Administrador Hospitalar",                     qtd:2,  om:"EPCAR"},
+  {cargo:"Advogado",                                     qtd:2,  om:"AFA"},
+  {cargo:"Advogado",                                     qtd:1,  om:"CTRB"},
+  {cargo:"Advogado",                                     qtd:1,  om:"EPCAR"},
+  {cargo:"Agente Administrativo",                        qtd:31, om:"AFA"},
+  {cargo:"Agente Administrativo",                        qtd:6,  om:"CBNB"},
+  {cargo:"Agente Administrativo",                        qtd:3,  om:"EEAR"},
+  {cargo:"Analista de Tecnologia da Informação",         qtd:2,  om:"EPCAR"},
+  {cargo:"Analista de Tecnologia da Informação",         qtd:1,  om:"CTRB"},
+  {cargo:"Analista de Tecnologia da Informação",         qtd:1,  om:"ECE"},
+  {cargo:"Analista Técnico-Administrativo",              qtd:2,  om:"CBNB"},
+  {cargo:"Arquiteto",                                    qtd:1,  om:"EPCAR"},
+  {cargo:"Arquivista",                                   qtd:1,  om:"CTRB"},
+  {cargo:"Arquivista",                                   qtd:1,  om:"EEAR"},
+  {cargo:"Arquivista",                                   qtd:1,  om:"EPCAR"},
+  {cargo:"Assistente Social",                            qtd:3,  om:"EPCAR"},
+  {cargo:"Assistente Social",                            qtd:1,  om:"CTRB"},
+  {cargo:"Assistente Social",                            qtd:1,  om:"ECE"},
+  {cargo:"Auxiliar em Assuntos Educacionais",            qtd:6,  om:"CBNB"},
+  {cargo:"Bibliotecário",                                qtd:1,  om:"AFA"},
+  {cargo:"Bibliotecário",                                qtd:1,  om:"CTRB"},
+  {cargo:"Bibliotecário",                                qtd:1,  om:"ECE"},
+  {cargo:"Bibliotecário",                                qtd:1,  om:"EPCAR"},
+  {cargo:"Contador",                                     qtd:3,  om:"EPCAR"},
+  {cargo:"Contador",                                     qtd:2,  om:"AFA"},
+  {cargo:"Contador",                                     qtd:1,  om:"CTRB"},
+  {cargo:"Enfermeiro",                                   qtd:4,  om:"EPCAR"},
+  {cargo:"Enfermeiro",                                   qtd:1,  om:"EEAR"},
+  {cargo:"Engenheiro Civil",                             qtd:1,  om:"EPCAR"},
+  {cargo:"Engenheiro de Segurança do Trabalho",          qtd:1,  om:"EPCAR"},
+  {cargo:"Engenheiro Eletricista",                       qtd:1,  om:"EPCAR"},
+  {cargo:"Estatístico",                                  qtd:2,  om:"EPCAR"},
+  {cargo:"Estatístico",                                  qtd:1,  om:"CTRB"},
+  {cargo:"Farmacêutico Bioquímico",                      qtd:2,  om:"EPCAR"},
+  {cargo:"Fisioterapeuta",                               qtd:2,  om:"EPCAR"},
+  {cargo:"Fisioterapeuta",                               qtd:1,  om:"EEAR"},
+  {cargo:"Fonoaudiólogo",                                qtd:1,  om:"EEAR"},
+  {cargo:"Fonoaudiólogo",                                qtd:1,  om:"EPCAR"},
+  {cargo:"Médico (20h)",                                 qtd:6,  om:"AFA"},
+  {cargo:"Médico (20h)",                                 qtd:2,  om:"EPCAR"},
+  {cargo:"Médico (20h)",                                 qtd:1,  om:"EEAR"},
+  {cargo:"Médico do Trabalho",                           qtd:1,  om:"EPCAR"},
+  {cargo:"Nutricionista",                                qtd:2,  om:"CTRB"},
+  {cargo:"Nutricionista",                                qtd:2,  om:"EPCAR"},
+  {cargo:"Pedagogo",                                     qtd:3,  om:"EPCAR"},
+  {cargo:"Pedagogo",                                     qtd:1,  om:"AFA"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:32, om:"EPCAR"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:26, om:"CTRB"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:18, om:"CBNB"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:5,  om:"UNIFA"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:3,  om:"ECE"},
+  {cargo:"Professor da Carreira de Magistério do EBTT",  qtd:3,  om:"EEAR"},
+  {cargo:"Professor da Carreira do Magistério Superior", qtd:36, om:"AFA"},
+  {cargo:"Professor da Carreira do Magistério Superior", qtd:4,  om:"UNIFA"},
+  {cargo:"Psicólogo",                                    qtd:3,  om:"EPCAR"},
+  {cargo:"Psicólogo",                                    qtd:2,  om:"CTRB"},
+  {cargo:"Psicólogo",                                    qtd:2,  om:"ECE"},
+  {cargo:"Psicólogo",                                    qtd:1,  om:"EEAR"},
+  {cargo:"Técnico de Informática",                       qtd:5,  om:"AFA"},
+  {cargo:"Técnico de Laboratório",                       qtd:2,  om:"EPCAR"},
+  {cargo:"Técnico de Laboratório",                       qtd:1,  om:"EEAR"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:28, om:"CTRB"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:6,  om:"CBNB"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:2,  om:"EPCAR"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:1,  om:"AFA"},
+  {cargo:"Técnico em Assuntos Educacionais",             qtd:1,  om:"EAOAR"},
+  {cargo:"Técnico em Comunicação Social",                qtd:2,  om:"EPCAR"},
+  {cargo:"Técnico em Comunicação Social",                qtd:1,  om:"CTRB"},
+  {cargo:"Técnico em Enfermagem",                        qtd:5,  om:"EPCAR"},
+  {cargo:"Técnico em Radiologia",                        qtd:2,  om:"EPCAR"},
+  {cargo:"Técnico em Radiologia",                        qtd:1,  om:"AFA"},
+  {cargo:"Terapeuta Ocupacional",                        qtd:1,  om:"AFA"},
+  {cargo:"Terapeuta Ocupacional",                        qtd:1,  om:"EEAR"},
+  {cargo:"Terapeuta Ocupacional",                        qtd:1,  om:"EPCAR"},
+];
+
+/* ──────────────────────────────────────────
+   HELPERS
+────────────────────────────────────────── */
+function agrupar(data, key) {
+  return data.reduce((acc, r) => {
+    acc[r[key]] = (acc[r[key]] || 0) + r.qtd;
+    return acc;
+  }, {});
+}
+
+const TOTAL26 = 95, TOTAL27 = 323;
+const OM_ORDER = ["AFA","CBNB","CTRB","EAOAR","ECEMAR","ECE","EEAR","EPCAR","UNIFA"];
+
+const om26 = agrupar(RAW26, 'om');
+const om27 = agrupar(RAW27, 'om');
+const cargo26 = agrupar(RAW26, 'cargo');
+const cargo27 = agrupar(RAW27, 'cargo');
+
+const PALETTE26 = ['#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#1d4ed8','#1e40af','#2563eb','#eff6ff'];
+const PALETTE27 = ['#f59e0b','#fbbf24','#fcd34d','#fde68a','#fef3c7','#d97706','#b45309','#92400e','#fffbeb'];
+const PALETTE_MIX = ['#3b82f6','#f59e0b','#10b981','#8b5cf6','#f43f5e','#06b6d4','#84cc16','#ec4899'];
+
+Chart.register(ChartDataLabels);
+
+const CHART_DEFAULTS = {
+  responsive: true,
+  plugins: {
+    legend: { labels: { color:'#8b949e', font:{ size:11 } } },
+    datalabels: { display: false }
+  }
+};
+
+/* ──────────────────────────────────────────
+   GRÁFICO: GERAL (barra comparativa)
+────────────────────────────────────────── */
+new Chart(document.getElementById('chartGeral'), {
+  type: 'bar',
+  data: {
+    labels: ['PLOA 2026','PLOA 2027'],
+    datasets: [{
+      label: 'Vagas',
+      data: [TOTAL26, TOTAL27],
+      backgroundColor: [
+        'rgba(59,130,246,.75)',
+        'rgba(245,158,11,.75)',
+      ],
+      borderColor: ['#3b82f6','#f59e0b'],
+      borderWidth: 2,
+      borderRadius: 10,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    indexAxis: 'y',
+    scales: {
+      x: { grid:{color:'rgba(255,255,255,.05)'}, ticks:{color:'#8b949e'} },
+      y: { grid:{display:false}, ticks:{color:'#e6edf3', font:{weight:'700'}} }
+    },
+    plugins: {
+      ...CHART_DEFAULTS.plugins,
+      datalabels: {
+        display: true, anchor:'end', align:'end', color:'#e6edf3',
+        font:{weight:'700', size:13},
+        formatter: v => v
+      }
+    }
+  }
+});
+
+/* ──────────────────────────────────────────
+   GRÁFICO: TIPO DE CARGO (rosca)
+────────────────────────────────────────── */
+const tipoGrupos = {
+  'Magistério EBTT':    (cargo26['Professor da Carreira de Magistério do EBTT']||0) + (cargo27['Professor da Carreira de Magistério do EBTT']||0),
+  'Magistério Superior':(cargo26['Professor da Carreira do Magistério Superior']||0) + (cargo27['Professor da Carreira do Magistério Superior']||0),
+  'Téc. Educ./Admin.':  (cargo26['Técnico em Assuntos Educacionais']||0) + (cargo27['Técnico em Assuntos Educacionais']||0) +
+                        (cargo27['Agente Administrativo']||0),
+  'Saúde':              Object.entries(cargo27).filter(([k])=> ['Enfermeiro','Médico (20h)','Médico do Trabalho','Farmacêutico Bioquímico','Fisioterapeuta','Fonoaudiólogo','Psicólogo','Técnico em Enfermagem','Técnico em Radiologia','Nutricionista','Terapeuta Ocupacional','Assistente Social'].includes(k)).reduce((s,[,v])=>s+v,0),
+  'Administração':      (cargo27['Administrador']||0)+(cargo27['Contador']||0)+(cargo27['Analista Técnico-Administrativo']||0)+(cargo26['Técnico em Assuntos Educacionais']||0),
+  'TI':                 (cargo27['Analista de Tecnologia da Informação']||0)+(cargo27['Técnico de Informática']||0),
+  'Outros':             0
+};
+tipoGrupos['Outros'] = TOTAL26 + TOTAL27 - Object.values(tipoGrupos).reduce((a,b)=>a+b,0);
+if(tipoGrupos['Outros']<0) tipoGrupos['Outros'] = 0;
+
+new Chart(document.getElementById('chartTipoCargo'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(tipoGrupos),
+    datasets: [{
+      data: Object.values(tipoGrupos),
+      backgroundColor: PALETTE_MIX,
+      borderColor: '#161b22', borderWidth: 3,
+    }]
+  },
+  options: {
+    ...CHART_DEFAULTS,
+    cutout: '60%',
+    plugins: {
+      ...CHART_DEFAULTS.plugins,
+      legend: { position:'right', labels:{color:'#8b949e', font:{size:10}, padding:8} },
+      datalabels: {
+        display: ctx => ctx.dataset.data[ctx.dataIndex] > 15,
+        color:'#e6edf3', font:{weight:'700', size:11},
+        formatter:(v,ctx)=> `${Math.round(v/(TOTAL26+TOTAL27)*100)}%`
+      }
+    }
+  }
+});
+
+/* ──────────────────────────────────────────
+   GRÁFICO: OM 2026 (pizza)
+────────────────────────────────────────── */
+function makeOmChart(id, omMap, palette) {
+  const labels = Object.keys(omMap).sort((a,b)=>omMap[b]-omMap[a]);
+  const data   = labels.map(k=>omMap[k]);
+  return new Chart(document.getElementById(id), {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: palette, borderColor:'#161b22', borderWidth:3 }]
+    },
+    options: {
+      ...CHART_DEFAULTS,
+      plugins: {
+        ...CHART_DEFAULTS.plugins,
+        legend: { position:'right', labels:{color:'#8b949e', font:{size:10}, padding:6} },
+        datalabels: {
+          display: ctx => ctx.dataset.data[ctx.dataIndex] >= 2,
+          color:'#0d1117', font:{weight:'700', size:10},
+          formatter:(v,ctx)=> ctx.chart.data.labels[ctx.dataIndex]+'\n'+v
+        }
+      }
+    }
+  });
+}
+makeOmChart('chartOM26', om26, PALETTE26);
+makeOmChart('chartOM27', om27, PALETTE27);
+
+/* ──────────────────────────────────────────
+   GRÁFICO: OM COMPARATIVO (barra dupla)
+────────────────────────────────────────── */
+const allOMs = [...new Set([...Object.keys(om26),...Object.keys(om27)])].sort();
+new Chart(document.getElementById('chartOMComparativo'), {
+  type:'bar',
+  data:{
+    labels: allOMs,
+    datasets:[
+      { label:'2026', data: allOMs.map(o=>om26[o]||0), backgroundColor:'rgba(59,130,246,.75)', borderColor:'#3b82f6', borderWidth:2, borderRadius:6 },
+      { label:'2027', data: allOMs.map(o=>om27[o]||0), backgroundColor:'rgba(245,158,11,.75)', borderColor:'#f59e0b', borderWidth:2, borderRadius:6 }
+    ]
+  },
+  options:{
+    ...CHART_DEFAULTS,
+    scales:{
+      x:{ grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8b949e'} },
+      y:{ grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8b949e'} }
+    },
+    plugins:{
+      ...CHART_DEFAULTS.plugins,
+      legend:{ labels:{color:'#8b949e', font:{size:11}} },
+      datalabels:{
+        display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+        color:'#e6edf3', font:{size:9, weight:'700'},
+        anchor:'end', align:'top',
+        formatter: v=> v||''
+      }
+    }
+  }
+});
+
+/* ──────────────────────────────────────────
+   GRÁFICO: CARGO 2026 (barra horizontal)
+────────────────────────────────────────── */
+function makeCargoChart(id, cargoMap, palette, top=12) {
+  const sorted = Object.entries(cargoMap).sort((a,b)=>b[1]-a[1]).slice(0,top);
+  const labels = sorted.map(([k])=> k.length>32 ? k.substring(0,30)+'…' : k);
+  const data   = sorted.map(([,v])=>v);
+  return new Chart(document.getElementById(id), {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{ data, backgroundColor: palette.slice(0,data.length), borderRadius:6, borderSkipped:false }]
+    },
+    options:{
+      ...CHART_DEFAULTS,
+      indexAxis:'y',
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8b949e'} },
+        y:{ grid:{display:false}, ticks:{color:'#e6edf3', font:{size:10}} }
+      },
+      plugins:{
+        ...CHART_DEFAULTS.plugins,
+        legend:{display:false},
+        datalabels:{
+          display:true, anchor:'end', align:'end', color:'#e6edf3',
+          font:{weight:'700',size:10}, formatter:v=>v
+        }
+      }
+    }
+  });
+}
+makeCargoChart('chartCargo26', cargo26, PALETTE26);
+makeCargoChart('chartCargo27', cargo27, PALETTE27);
+
+/* ──────────────────────────────────────────
+   OM PROGRESS BARS
+────────────────────────────────────────── */
+const maxTotal = Math.max(TOTAL26, TOTAL27);
+const omBarsEl = document.getElementById('omBars');
+allOMs.forEach(om => {
+  const v26 = om26[om]||0;
+  const v27 = om27[om]||0;
+  const max = Math.max(v26+v27, 1);
+  const w26 = Math.round(v26/(v26+v27||1)*100);
+  const w27 = 100 - w26;
+  omBarsEl.innerHTML += `
+    <div class="om-item">
+      <div class="om-row">
+        <span class="om-name">${om}</span>
+        <span class="om-nums"><span style="color:var(--fab26)">${v26}</span> → <span style="color:var(--fab27)">${v27}</span></span>
+      </div>
+      <div class="om-track">
+        <div class="om-bar26" style="width:${v26?w26:0}%"></div>
+        <div class="om-bar27" style="width:${v27?w27:0}%"></div>
+      </div>
+    </div>`;
+});
+
+/* ──────────────────────────────────────────
+   INSIGHTS
+────────────────────────────────────────── */
+const insightsEl = document.getElementById('insights');
+const insightsList = [
+  {icon:'📈', cls:'blue',  title:'Crescimento de +240%',           desc:'O total de vagas salta de 95 (2026) para 323 (2027), reflexo de um plano de expansão expressivo nas instituições de ensino da FAB.'},
+  {icon:'🏛️', cls:'amber', title:'CTRB estreia com 71 vagas',      desc:'O CTRB não figurava no PLOA 2026 e surge em 2027 com 71 vagas (22% do total), tornando-se a 3ª OM com mais solicitações.'},
+  {icon:'👨‍🏫', cls:'blue',  title:'Magistério cresce +89%',          desc:'Prof. EBTT (46→87) e Prof. Superior (38→40) mantêm liderança; juntos somam 127 vagas (39% do PLOA 2027).'},
+  {icon:'🏥', cls:'green', title:'Área da Saúde surge em 2027',      desc:'Cargos como Enfermeiro, Médico, Fisioterapeuta, Fonoaudiólogo e Psicólogo somam ~47 vagas — categoria inexistente no PLOA 2026.'},
+  {icon:'⚠️', cls:'amber', title:'Concentração em 3 OMs',           desc:'EPCAR (91) + AFA (87) + CTRB (71) concentram 77% das vagas de 2027, indicando foco em instituições de ensino superior e técnico.'},
+];
+insightsList.forEach(i => {
+  insightsEl.innerHTML += `
+    <div class="tl-item">
+      <div class="tl-dot ${i.cls}">${i.icon}</div>
+      <div class="tl-content">
+        <div class="tl-title">${i.title}</div>
+        <div class="tl-desc">${i.desc}</div>
+      </div>
+    </div>`;
+});
+
+/* ──────────────────────────────────────────
+   TABELA DETALHADA
+────────────────────────────────────────── */
+// Agrupa por cargo+om
+const keyMap = {};
+RAW26.forEach(r => {
+  const k = r.cargo+'|||'+r.om;
+  keyMap[k] = keyMap[k] || {cargo:r.cargo, om:r.om, v26:0, v27:0};
+  keyMap[k].v26 += r.qtd;
+});
+RAW27.forEach(r => {
+  const k = r.cargo+'|||'+r.om;
+  keyMap[k] = keyMap[k] || {cargo:r.cargo, om:r.om, v26:0, v27:0};
+  keyMap[k].v27 += r.qtd;
+});
+let tableData = Object.values(keyMap).sort((a,b) => (b.v26+b.v27)-(a.v26+a.v27));
+let sortDir = {};
+
+function renderTabela(data) {
+  const tbody = document.getElementById('tabelaBody');
+  const maxVal = Math.max(...data.map(r=>r.v27||r.v26));
+  tbody.innerHTML = data.map(r => {
+    const diff = r.v27 - r.v26;
+    const diffStr = diff > 0 ? `<span class="diff-pos">+${diff}</span>` :
+                    diff < 0 ? `<span class="diff-neg">${diff}</span>` :
+                               `<span class="diff-zero">—</span>`;
+    const bar26w = Math.round((r.v26/maxVal)*80);
+    const bar27w = Math.round((r.v27/maxVal)*80);
+    return `<tr>
+      <td>${r.cargo}</td>
+      <td><span class="tag tag-om">${r.om}</span></td>
+      <td>
+        <div class="bar-cell">
+          <div class="bar-mini" style="width:${bar26w}px;max-width:80px"></div>
+          <span>${r.v26||'—'}</span>
+        </div>
+      </td>
+      <td>
+        <div class="bar-cell">
+          <div class="bar-mini amber" style="width:${bar27w}px;max-width:80px"></div>
+          <span>${r.v27||'—'}</span>
+        </div>
+      </td>
+      <td>${diffStr}</td>
+      <td>
+        <div style="display:flex;gap:2px;align-items:center;">
+          <div style="height:5px;width:${Math.round((r.v26/(TOTAL26||1))*100)}px;max-width:40px;background:var(--fab26);border-radius:3px;opacity:.7" title="2026: ${Math.round((r.v26/(TOTAL26||1))*100)}%"></div>
+          <div style="height:5px;width:${Math.round((r.v27/(TOTAL27||1))*100)}px;max-width:40px;background:var(--fab27);border-radius:3px;opacity:.7" title="2027: ${Math.round((r.v27/(TOTAL27||1))*100)}%"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('countRows').textContent = `${data.length} registros`;
+}
+renderTabela(tableData);
+
+function filtrarTabela() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = tableData.filter(r =>
+    r.cargo.toLowerCase().includes(q) || r.om.toLowerCase().includes(q)
+  );
+  renderTabela(filtered);
+}
+
+function sortTable(col) {
+  sortDir[col] = !sortDir[col];
+  const keys = ['cargo','om','v26','v27','diff'];
+  tableData = tableData.map(r=>({...r, diff:r.v27-r.v26}))
+    .sort((a,b) => {
+      const av = a[keys[col]], bv = b[keys[col]];
+      if(typeof av === 'string') return sortDir[col] ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir[col] ? av-bv : bv-av;
+    });
+  filtrarTabela();
+}
+
+/* ──────────────────────────────────────────
+   FILTROS SELECT (popula)
+────────────────────────────────────────── */
+const allCargos = [...new Set([...RAW26.map(r=>r.cargo),...RAW27.map(r=>r.cargo)])].sort();
+const selOM    = document.getElementById('filtroOM');
+const selCargo = document.getElementById('filtroCargo');
+allOMs.forEach(o => selOM.innerHTML += `<option value="${o}">${o}</option>`);
+allCargos.forEach(c => selCargo.innerHTML += `<option value="${c}">${c}</option>`);
+
+function aplicarFiltros() {
+  const ano   = document.getElementById('filtroAno').value;
+  const om    = document.getElementById('filtroOM').value;
+  const cargo = document.getElementById('filtroCargo').value;
+
+  tableData = Object.values(keyMap).sort((a,b) => (b.v26+b.v27)-(a.v26+a.v27))
+    .filter(r => {
+      if(om    !== 'todas' && r.om    !== om)    return false;
+      if(cargo !== 'todos' && r.cargo !== cargo) return false;
+      if(ano === '2026' && !r.v26) return false;
+      if(ano === '2027' && !r.v27) return false;
+      return true;
+    });
+  filtrarTabela();
+}
+
+function resetarFiltros() {
+  document.getElementById('filtroAno').value   = 'ambos';
+  document.getElementById('filtroOM').value    = 'todas';
+  document.getElementById('filtroCargo').value = 'todos';
+  document.getElementById('searchInput').value = '';
+  tableData = Object.values(keyMap).sort((a,b) => (b.v26+b.v27)-(a.v26+a.v27));
+  renderTabela(tableData);
+}
+
+/* ──────────────────────────────────────────
+   NAV ACTIVE ON SCROLL
+────────────────────────────────────────── */
+const sections = ['visao-geral','por-om','por-cargo','tabela'];
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if(el && window.scrollY >= el.offsetTop - 100) cur = id;
+  });
+  document.querySelectorAll('nav a').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#'+cur);
+  });
+});
+</script>
+</body>
+</html>
