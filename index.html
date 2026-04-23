@@ -266,8 +266,8 @@ function renderKPI(){
   const cargos=new Set(rows.map(r=>r.cargo)).size;
   const cards=[
     {label:'Total de Vagas',val:tot,sub:(anoAtivo==='all'?'2026 + 2027 combinados':'PLOA '+anoAtivo),c:(anoAtivo==2027?C_AMBER:C_BLUE)},
-    {label:'OMs envolvidas',val:oms,sub:'organizações militares',c:'var(--muted)'},
-    {label:'Tipos de Cargo',val:cargos,sub:'cargos distintos',c:'var(--muted)'},
+    {label:'OMs envolvidas',val:oms,sub:'organizações militares',c:'#8b5cf6'},
+    {label:'Tipos de Cargo',val:cargos,sub:'cargos distintos',c:'#22d3ee'},
   ];
   document.getElementById('kpiRow').innerHTML=cards.map(k=>`
     <div class="kpi" style="--c:${k.c}">
