@@ -264,30 +264,11 @@ function renderKPI(){
   const rows=getRows(),tot=sum(rows);
   const oms=new Set(rows.map(r=>r.om)).size;
   const cargos=new Set(rows.map(r=>r.cargo)).size;
-  const topOM=agrupar(rows,'om')[0]||['—',0];
-  const topC=agrupar(rows,'cargo')[0]||['—',0];
-  let cards;
-  if(anoAtivo==='all'){
-    const t26=sum(RAW[2026]),t27=sum(RAW[2027]);
-    const cr=(((t27-t26)/t26)*100).toFixed(0);
-    cards=[
-      {label:'Total Geral',val:tot,sub:'2026 + 2027 combinados',c:C_GREEN},
-      {label:'PLOA 2026',val:t26,sub:'vagas solicitadas',c:C_BLUE},
-      {label:'PLOA 2027',val:t27,sub:'vagas solicitadas',c:C_AMBER},
-      {label:'Crescimento',val:'+'+cr+'%',sub:'variação 2026 → 2027',c:C_GREEN},
-      {label:'OMs envolvidas',val:oms,sub:'organizações militares',c:'var(--muted)'},
-      {label:'Tipos de Cargo',val:cargos,sub:'cargos distintos',c:'var(--muted)'},
-    ];
-  }else{
-    const c=anoAtivo==2026?C_BLUE:C_AMBER;
-    cards=[
-      {label:'Total de Vagas',val:tot,sub:'PLOA '+anoAtivo,c},
-      {label:'OMs envolvidas',val:oms,sub:'organizações militares',c:'var(--muted)'},
-      {label:'Tipos de Cargo',val:cargos,sub:'cargos distintos',c:'var(--muted)'},
-      {label:'1ª OM',val:topOM[0],sub:topOM[1]+' vagas · '+pct(topOM[1],tot)+'%',c:C_GREEN},
-      {label:'1º Cargo (qtd)',val:topC[1],sub:(topC[0].length>20?topC[0].slice(0,18)+'…':topC[0]),c:C_GREEN},
-    ];
-  }
+  const cards=[
+    {label:'Total de Vagas',val:tot,sub:(anoAtivo==='all'?'2026 + 2027 combinados':'PLOA '+anoAtivo),c:(anoAtivo==2027?C_AMBER:C_BLUE)},
+    {label:'OMs envolvidas',val:oms,sub:'organizações militares',c:'var(--muted)'},
+    {label:'Tipos de Cargo',val:cargos,sub:'cargos distintos',c:'var(--muted)'},
+  ];
   document.getElementById('kpiRow').innerHTML=cards.map(k=>`
     <div class="kpi" style="--c:${k.c}">
       <div class="kpi-label">${k.label}</div>
